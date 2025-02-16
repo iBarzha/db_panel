@@ -8,6 +8,43 @@
     <title>Головна сторінка - Управління БД</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
+
+<div class="modal fade" id="addTableModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Створити таблицю</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="new-table-name" class="form-control" placeholder="Введіть назву таблиці">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрити</button>
+                <button type="button" class="btn btn-success" onclick="createTable()">Створити</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteTableModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Видалити таблицю</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="delete-table-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Скасувати</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-btn">Видалити</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
@@ -38,9 +75,9 @@
         <div class="card p-4 shadow-sm mt-4">
             <h3>Дії з базою даних</h3>
             <div class="d-flex gap-2">
-                <button class="btn btn-success">Додати таблицю</button>
-                <button class="btn btn-danger">Видалити таблицю</button>
-                <button class="btn btn-warning">Оновити базу</button>
+                <button class="btn btn-success" onclick="showAddTableModal()">Додати таблицю</button>
+                <button class="btn btn-danger" onclick="deleteTable()">Видалити таблицю</button>
+                <button class="btn btn-warning" onclick="loadTables()">Оновити базу</button>
             </div>
         </div>
 
@@ -82,18 +119,47 @@
     </div>
 
     <script>
-    function executeSQL() {
-        const sqlCommand = document.getElementById('sql-command').value;
-        fetch('/api/execute_sql/', {
+    function showAddTableModal() {
+        const modal = new bootstrap.Modal(document.getElementById('addTableModal'));
+        modal.show();
+    }
+
+    function showDeleteTableModal(tableName) {
+        document.getElementById('delete-table-message').innerText = `Ви впевнені, що хочете видалити таблицю '${tableName}'?`;
+        document.getElementById('confirm-delete-btn').setAttribute('onclick', `deleteTable('${tableName}')`);
+        const modal = new bootstrap.Modal(document.getElementById('deleteTableModal'));
+        modal.show();
+    }
+
+    function createTable() {
+        const tableName = document.getElementById('new-table-name').value;
+        if (!tableName) return;
+
+        fetch('/api/create_table/', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: `sql=${encodeURIComponent(sqlCommand)}`
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `table_name=${encodeURIComponent(tableName)}`
         })
         .then(response => response.json())
-        .then(data => alert(data.message))
-        .catch(error => alert('Помилка: ' + error));
+        .then(data => {
+            alert(data.message);
+            loadTables();
+        })
+        .catch(error => console.error('Помилка:', error));
+    }
+
+    function deleteTable(tableName) {
+        fetch('/api/delete_table/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `table_name=${encodeURIComponent(tableName)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            loadTables();
+        })
+        .catch(error => console.error('Помилка:', error));
     }
 
     function loadTables() {
@@ -107,10 +173,10 @@
                     <tr>
                         <td>${table.name}</td>
                         <td>${table.columns_count}</td>
-                        <td>${table.created_at}</td>
+                        <td>-</td>
                         <td>
                             <button class="btn btn-sm btn-primary">Редагувати</button>
-                            <button class="btn btn-sm btn-danger">Видалити</button>
+                            <button class="btn btn-sm btn-danger" onclick="showDeleteTableModal('${table.name}')">Видалити</button>
                         </td>
                     </tr>
                 `;
@@ -121,6 +187,8 @@
 
     document.addEventListener('DOMContentLoaded', loadTables);
 </script>
+
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
