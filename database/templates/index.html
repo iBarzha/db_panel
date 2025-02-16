@@ -1,0 +1,126 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Головна сторінка - Управління БД</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Головна Панель</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="#">Головна</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#таблиці">Таблиці</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#">Налаштування</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <h1 class="text-center">Адміністрування реляційних баз даних</h1>
+        <p class="text-center text-muted">Керуйте таблицями та SQL-запитами легко!</p>
+
+        <div class="card p-4 shadow-sm">
+            <h3>Виконати SQL-команду</h3>
+            <textarea id="sql-command" class="form-control mb-3" rows="4" placeholder="Наприклад: CREATE TABLE test (id INT, name VARCHAR(100));"></textarea>
+            <button class="btn btn-primary" onclick="executeSQL()">Виконати</button>
+        </div>
+
+        <div class="card p-4 shadow-sm mt-4">
+            <h3>Дії з базою даних</h3>
+            <div class="d-flex gap-2">
+                <button class="btn btn-success">Додати таблицю</button>
+                <button class="btn btn-danger">Видалити таблицю</button>
+                <button class="btn btn-warning">Оновити базу</button>
+            </div>
+        </div>
+
+        <div class="card p-4 shadow-sm mt-4" id="таблиці">
+            <h3>Таблиці бази даних</h3>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Ім'я таблиці</th>
+                            <th>Кількість стовпців</th>
+                            <th>Дата створення</th>
+                            <th>Дії</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>users</td>
+                            <td>5</td>
+                            <td>2025-01-28</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary">Редагувати</button>
+                                <button class="btn btn-sm btn-danger">Видалити</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>orders</td>
+                            <td>7</td>
+                            <td>2025-01-27</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary">Редагувати</button>
+                                <button class="btn btn-sm btn-danger">Видалити</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function executeSQL() {
+        const sqlCommand = document.getElementById('sql-command').value;
+        fetch('/api/execute_sql/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `sql=${encodeURIComponent(sqlCommand)}`
+        })
+        .then(response => response.json())
+        .then(data => alert(data.message))
+        .catch(error => alert('Помилка: ' + error));
+    }
+
+    function loadTables() {
+        fetch('/api/tables/')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.querySelector('tbody');
+            tbody.innerHTML = '';
+            data.forEach(table => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${table.name}</td>
+                        <td>${table.columns_count}</td>
+                        <td>${table.created_at}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary">Редагувати</button>
+                            <button class="btn btn-sm btn-danger">Видалити</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        })
+        .catch(error => console.error('Помилка:', error));
+    }
+
+    document.addEventListener('DOMContentLoaded', loadTables);
+</script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
